@@ -1,70 +1,66 @@
 #include <SDL3/SDL.h>
-#include "Math/Math.h"
-#include "Core/Random.h"
 #include <iostream>
+#include <vector>
+#include "Math/Math.h"
+#include "Math/Vector2.h"
+#include "Core/Random.h"
+#include "Core/Time.h"
+#include "Renderer/Renderer.h"
 
 using namespace fox;
 
 int main(int argc, char* argv[]) {
-    SDL_Init(SDL_INIT_VIDEO);
+    fox::Time time;
 
-    SDL_Window* window = SDL_CreateWindow("SDL3 Project", 1280, 1024, 0);
-    if (window == nullptr) {
-        std::cerr << "SDL_CreateWindow Error: " << SDL_GetError() << std::endl;
-        SDL_Quit();
-        return 1;
-    }
 
-    SDL_Renderer* renderer = SDL_CreateRenderer(window, NULL);
-    if (renderer == nullptr) {
-        std::cerr << "SDL_CreateRenderer Error: " << SDL_GetError() << std::endl;
-        SDL_DestroyWindow(window);
-        SDL_Quit();
-        return 1;
-    }
+    fox::Renderer renderer;
+    renderer.Initialize();
+    renderer.CreateWindow("Fox Engine", 1280, 1024);
+
 
     SDL_Event e;
     bool quit = false;
 
+    std::vector<fox::vec2> stars;
+    for (int i = 0; i < 100; i++) {
+        stars.push_back(vec2{fox::random::getRandomFloat() * 1280, fox::random::getRandomFloat() * 1024});
+    }
+
     while (!quit) {
+		time.Tick();
         while (SDL_PollEvent(&e)) {
             if (e.type == SDL_EVENT_QUIT) {
                 quit = true;
             }
         }
 
-        SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255); 
-        SDL_RenderClear(renderer); 
+        renderer.SetColor(0, 0, 0);
+        renderer.Clear();
 
-		for (int i = 0; i < 20; ++i) { // 20 random points
-            Uint8 r = rand() % 256;
-            Uint8 g = rand() % 256;
-            Uint8 b = rand() % 256;
-            SDL_SetRenderDrawColor(renderer, r, g, b, 255);
+        fox::vec2 speed{ 40.0f, 0.0f };
+		float length = speed.Length();
 
-            int x = static_cast<int>(random::getRandomFloat(0.0f, 1280.0f));
-            int y = static_cast<int>(random::getRandomFloat(0.0f, 1024.0f));
-            SDL_RenderPoint(renderer, x, y);
+        for (auto& star : stars) {
+            star += speed * time.GetDeltaTime();
+
+			if (star.x > 1280) star.x = 0;
+			if (star.x < 0) star.x = 1280;
+
+            renderer.SetColor(255, 255, 255);
+            renderer.DrawPoint(star.x, star.y);
         }
 
-		for (int i = 0; i < 10; ++i) { // 10 random lines
-            Uint8 r = rand() % 256;
-            Uint8 g = rand() % 256;
-            Uint8 b = rand() % 256;
-            SDL_SetRenderDrawColor(renderer, r, g, b, 255);
+        //for (int i = 0; i < 100; ++i) { // 10 random lines
+        //    /*renderer.SetColor(fox::random::getRandomInt(255), fox::random::getRandomInt(255), fox::random::getRandomInt(255), fox::random::getRandomInt(255));
+        //    renderer.DrawLine(fox::random::getRandomFloat() * 1280, fox::random::getRandomFloat() * 1024, fox::random::getRandomFloat() * 1280, fox::random::getRandomFloat() * 1024);*/
+        //}
 
-            int x = static_cast<int>(random::getRandomFloat(0.0f, 1280.0f));
-            int x2 = static_cast<int>(random::getRandomFloat(0.0f, 1280.0f));
-            int y = static_cast<int>(random::getRandomFloat(0.0f, 1024.0f));
-            int y2 = static_cast<int>(random::getRandomFloat(0.0f, 1024.0f));
-            SDL_RenderLine(renderer, x, y, x2, y2); 
-        }
-        SDL_RenderPresent(renderer); 
+        //for (int i = 0; i < 500; ++i) { // 10 random points
+        //    renderer.SetColor(fox::random::getRandomInt(255), fox::random::getRandomInt(255), fox::random::getRandomInt(255), fox::random::getRandomInt(255));
+        //    renderer.DrawPoint(fox::random::getRandomFloat() * 1280, fox::random::getRandomFloat() * 1024);
+        //}
+        renderer.Present();
     }
-
-    SDL_DestroyRenderer(renderer);
-    SDL_DestroyWindow(window);
-    SDL_Quit();
-
+    renderer.Shutdown();
     return 0;
-}
+};
